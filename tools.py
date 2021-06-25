@@ -11,6 +11,12 @@ from statsmodels.stats.multitest import multipletests
 import statsmodels.formula.api as smf 
 import statsmodels.api as sm
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.gridspec as gridspec
+
+import scipy.stats as stats
+
 def save_df_to_npz(obj, filename):
     np.savez_compressed(filename, data=obj.values, index=obj.index.values, columns=obj.columns.values)
 
@@ -20,7 +26,6 @@ def load_df_from_npz(filename):
     return obj
 
 # Program specific DEG
-
 def programDEG(count, usage, test_use = 'nb', offset = True, p_cor = 'bonferroni'):
     """
 
@@ -119,3 +124,70 @@ def programDEG(count, usage, test_use = 'nb', offset = True, p_cor = 'bonferroni
             print('Number of negative alpha is %s' %count_a)
     
     return results
+
+# Ranked gene scores in each GEP
+def plotRankedGeneScore(spectra, ncol=4):
+    nrow = int(np.ceil(spectra.shape[1]/ncol))
+    fig = plt.figure(figsize=(ncol*2, nrow*2), dpi=800)
+    gs = gridspec.GridSpec(nrow, ncol, fig, 0, 0, 1, 1, hspace=.8)
+    for (i,program) in enumerate(spectra.columns):
+        ax = fig.add_subplot(gs[int(i/ncol), i%ncol], frameon=False, rasterized=False)
+        x_ind = np.arange(1, spectra.shape[0]+1)
+        spectra_sub = spectra.sort_values(by=spectra.columns[i], axis=0, ascending=False).iloc[:,i]
+        value = spectra_sub.to_numpy()
+        ax.scatter(x_ind, value, label=None, s=5, alpha=.8)
+        #ax.set_xlabel('Ranked gene list')
+        #ax.set_ylabel('Relative expression')
+        ax.set_title('GEP %s'%program)
+        
+# Density plot of gene scores in each GEP
+def plotDensity(spectra, ncol=4):
+    nrow = int(np.ceil(spectra.shape[1]/ncol))
+    fig = plt.figure(figsize=(ncol*2, nrow*2), dpi=800)
+    gs = gridspec.GridSpec(nrow, ncol, fig, 0, 0, 1, 1, hspace=.8)
+    for (i,program) in enumerate(spectra.columns):
+        ax = fig.add_subplot(gs[int(i/ncol), i%ncol], frameon=False, rasterized=False)
+        spectra_sub = spectra.iloc[:,i]
+        value = spectra_sub.to_numpy()
+        sns.distplot(value, hist=True, bins=30, ax=ax)
+        ax.set_title('GEP %s'%program)
+        
+# Density plot of gene scores fitted by Gamma distributions in each GEP
+def plotDensityGamma(spectra, ncol=4, thrP=0.975):
+    selected_genes = {}
+    nrow = int(np.ceil(spectra.shape[1]/ncol))
+    fig = plt.figure(figsize=(ncol*2, nrow*2), dpi=800)
+    gs = gridspec.GridSpec(nrow, ncol, fig, 0, 0, 1, 1, hspace=.8)
+    for (i,program) in enumerate(spectra.columns):
+        ax = fig.add_subplot(gs[int(i/ncol), i%ncol], frameon=False, rasterized=False)
+        spectra_sub = spectra.iloc[:,i]
+        value = spectra_sub.to_numpy()
+        value[value==0] += 1e-8
+        x = np.linspace(1e-3, value.max(), 100)
+        # Fit a Gamma distribution
+        gamma = stats.gamma
+        param = gamma.fit(value, floc=0)
+        pdf_fitted = gamma.pdf(x, *param)
+        ax.plot(x, pdf_fitted, color='r')
+        # Get gene score cutoff
+        cutoff = gamma.ppf(thrP, *param)
+        ax.axvline(cutoff, color='grey', linestyle='--')
+        # Histogram
+        ax.hist(value, bins=30, density=True)
+        ax.set_title('GEP %s'%program)
+        # Number of genes pass the cutoff
+        num = np.sum(value > cutoff)
+        ax.set_xlabel('%d genes with score > %.3f' %(num, cutoff))
+        # Add genes to dictionary
+        spectra_sub = spectra.sort_values(by=spectra.columns[i], axis=0, ascending=False).iloc[:,i]
+        selected_genes['GEP %d'%(i+1)] = spectra_sub.index[:num]
+    
+    return selected_genes
+
+# Calculate gene scores based on the equation given in cisTopic
+def geneScore(spectra, scale=True):
+    gene_score = spectra*(np.log(spectra+1e-5).sub(np.mean(np.log(spectra+1e-5), axis=1), axis='index'))
+    if scale:
+        gene_score = gene_score.sub(gene_score.min(axis=0), axis='columns').div(gene_score.max(axis=0)-gene_score.min(axis=0), 
+                                                                                axis='columns')
+    return gene_score

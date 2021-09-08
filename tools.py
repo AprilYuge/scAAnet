@@ -26,7 +26,7 @@ def load_df_from_npz(filename):
     return obj
 
 # Program specific DEG
-def programDEG(count, usage, test_use = 'nb', offset = True, p_cor = 'bonferroni'):
+def programDEG(count, usage, test_use = 'nb', offset = True, p_cor = 'bonferroni', lib_size=None):
     """
 
     Parameters
@@ -48,7 +48,8 @@ def programDEG(count, usage, test_use = 'nb', offset = True, p_cor = 'bonferroni
     
     results = {}
     
-    lib_size = count.sum(1)
+    if lib_size is None:
+        lib_size = count.sum(1)
     
     # Filter out cells with too small library size
     min_counts_per_cell=1/20 * count.shape[1]

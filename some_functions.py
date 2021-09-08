@@ -84,8 +84,14 @@ def unique(seq):
 
     return [x for x in seq if x not in seen and not seen_add(x)]
 
+def firstUpper(temp):
+    temp = list(temp)
+    temp[0] = temp[0].upper()
+    temp = ''.join(temp)
+    return temp
+
 def dotplot(res, title, gmt, go=True, cutoff=0.05, n_terms=10, figsize=(6,5.5), 
-            cmap='viridis_r', savefile=False, saveplot=False): 
+            cmap='viridis', savefile=False, saveplot=False): 
     
     column = 'Adjusted P-value'
     colname = column
@@ -115,6 +121,12 @@ def dotplot(res, title, gmt, go=True, cutoff=0.05, n_terms=10, figsize=(6,5.5),
     df = df.assign(Hits=temp.iloc[:,0], Background=temp.iloc[:,1])
     df = df.assign(Hits_ratio=lambda x:x.Hits / x.Background)
     
+    # Convert the first letter in each term to capitals
+    df.Term = [firstUpper(i) for i in df.Term.values]
+    # Replace 'endoplasmic reticulum' with 'ER'
+    df.Term = [i.replace('endoplasmic reticulum', 'ER') for i in df.Term.values]
+    df.Term = [i.replace('endoplasmic reticulum ', 'ER') for i in df.Term.values]
+    
     # x axis values
     x = df.loc[:, colname].values
     xlabel = "-log$_{10}$(%s)"%column
@@ -143,10 +155,10 @@ def dotplot(res, title, gmt, go=True, cutoff=0.05, n_terms=10, figsize=(6,5.5),
     fig, ax = plt.subplots(figsize=figsize)
     sc = ax.scatter(x=x, y=y, s=area, edgecolors='face', c=hits_ratio,
                     cmap=cmap)
-    ax.set_xlabel(xlabel, fontsize=14, fontweight='bold')
+    ax.set_xlabel(xlabel, fontsize=14)
     ax.yaxis.set_major_locator(plt.FixedLocator(y))
     ax.yaxis.set_major_formatter(plt.FixedFormatter(ylabels))
-    ax.set_yticklabels(ylabels, fontsize=16)
+    ax.set_yticklabels(ylabels, fontsize=14)
     ax.grid()
     
     # colorbar
@@ -163,10 +175,11 @@ def dotplot(res, title, gmt, go=True, cutoff=0.05, n_terms=10, figsize=(6,5.5),
     legend_markers = []
     for ix in idx: 
         legend_markers.append(ax.scatter([],[], s=area[ix], c='b'))
-    ax.legend(legend_markers, label, title='Hits')
-    ax.set_title(title, fontsize=20, fontweight='bold')
+    ax.legend(legend_markers, label, title='Hits', bbox_to_anchor=(1, 1), 
+              loc=2, frameon=False, title_fontsize=12)
+    ax.set_title(title, fontsize=18, fontweight='bold')
     
     if saveplot:
         # Save plot to file
-        plt.savefig(saveplot, dpi=500, bbox_inches="tight")
+        plt.savefig(saveplot, dpi=600, bbox_inches="tight")
         plt.close()

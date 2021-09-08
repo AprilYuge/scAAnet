@@ -27,7 +27,7 @@ def scAAnet(count,
         early_stop=15,
         batch_size=64,
         optimizer='rmsprop',
-        learning_rate=None,
+        learning_rate=0.01,
         random_state=0,
         threads=None,
         verbose=False,
@@ -41,7 +41,7 @@ def scAAnet(count,
 
     Parameters
     ----------
-    count : `pandas.core.frame.DataFrame`
+    count : `anndata.AnnData`, `pandas.core.frame.DataFrame` or `numpy.ndarray`
         A dataframe saving raw counts.
     ae_type : `str`, optional. `zipoisson`(default), `zinb`, `nb` or `poisson`.
         Type of the autoencoder. Return values and the architecture is
@@ -74,7 +74,7 @@ def scAAnet(count,
         Number of samples in the batch used for SGD.
     optimizer : `str`, optional. Default: "rmsprop".
         Type of optimization method used for training.
-    learning_rate : `float`, optional. Default: None.
+    learning_rate : `float`, optional. Default: 0.01.
         Learning rate to use in the training.
     random_state : `int`, optional. Default: 0.
         Seed for python, numpy and tensorflow.

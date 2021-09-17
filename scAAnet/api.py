@@ -29,8 +29,7 @@ def scAAnet(count,
         batch_size=64,
         optimizer='rmsprop',
         learning_rate=0.01,
-        random_state=0,
-        threads=None,
+        random_state=0, 
         verbose=False,
         training_kwds={},
         return_model=False,
@@ -79,8 +78,6 @@ def scAAnet(count,
         Learning rate to use in the training.
     random_state : `int`, optional. Default: 0.
         Seed for python, numpy and tensorflow.
-    threads : `int` or None, optional. Default: None
-        Number of threads to use in training. All cores are used by default.
     verbose : `bool`, optional. Default: `False`.
         If true, prints additional information about training and architecture.
     training_kwds : `dict`, optional.
@@ -142,11 +139,10 @@ def scAAnet(count,
     training_kwds = {**training_kwds,
         'epochs': epochs,
         'reduce_lr': reduce_lr,
-        'early_stop': early_stop,
+        /'early_stop': early_stop,
         'batch_size': batch_size,
         'optimizer': optimizer,
         'verbose': verbose,
-        'threads': threads,
         'learning_rate': learning_rate,
         'ae_type': ae_type,
         'warm_up': warm_up,

@@ -6,7 +6,7 @@ import tensorflow.keras.optimizers as opt
 def train(count, nor_count, lib_size, network, output_dir=None, optimizer='rmsprop', learning_rate=None,
           epochs=300, reduce_lr=10, output_subset=None, use_raw_as_output=True,
           early_stop=15, batch_size=256, clip_grad=5., save_weights=False,
-          validation_split=0.1, tensorboard=False, verbose=True, threads=None, ae_type='normal',
+          validation_split=0.1, tensorboard=False, verbose=True, ae_type='normal',
           warm_up = 0, Z_fixed_idx = None,
           **kwds):
 

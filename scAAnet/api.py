@@ -2,6 +2,7 @@ import os, random
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
+calhost:8875
 import anndata
 
 try:
@@ -14,10 +15,10 @@ from .train import train
 from .network import AE_types
 
 def scAAnet(count,
-        ae_type='zipoisson',
-        hidden_size=(64, 32, 64), # network args
+        ae_type='zinb',
+        hidden_size=(128, 10, 128), # network args
         hidden_dropout=0.,
-        dispersion='gene',
+        dispersion='gene-cell',
         batchnorm=True,
         activation='relu',
         init='glorot_normal',
@@ -35,7 +36,7 @@ def scAAnet(count,
         return_model=False,
         return_loss=False,
         return_info=False,
-        warm_up = 0
+        warm_up = 20
         ):
     """Single-Cell Archetypal Analysis Neural Network (scAAnet) API.
 

@@ -4,7 +4,7 @@ scAAnet is an autoencoder-based neural network which can perform nonlinear arche
 
 ![alt text](https://github.com/AprilYuge/scAAnet_latest/blob/main/images/overview.png)
 
-More details about scAAnet can be found in our manuscript.
+More details about scAAnet can be found in our [manuscript](https://www.biorxiv.org/content/10.1101/2021.09.17.460824v1).
 
 ### Usage ###
 

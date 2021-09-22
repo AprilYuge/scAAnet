@@ -17,9 +17,10 @@ scAAnet is implemented in Python. To use scAAnet, TensorFlow 2, numpy and pandas
 Then you can use scAAnet after activating the virtual environment. Here is an example of running scAAnet:
 
 * `from scAAnet.api import scAAnet`
-* `recon, usage, spectra = scAAnet(count, hidden_size=(128, K, 128), ae_type='zinb', epochs=200, batch_size=64, early_stop=100, reduce_lr=10, learning_rate=0.01)`
+* `re = scAAnet(count, hidden_size=(128, K, 128), ae_type='zinb', epochs=200, batch_size=64, early_stop=100, reduce_lr=10, learning_rate=0.01)`
+* `recon, usage, spectra = re['recon'], re['usage'], re['spectra']`
 
-The input `count` variable is single-cell expression data with N cells and G genes and `K` is the number of archetypes/GEPs. The input `count` can be a pandas dataframe, a numpy array, or an AnnData object. Note that `recon`, `usage` and `spectra` are reconstructed expression count data (N by G), the usage matrix (N by K) and the archetype matrix (K by G) of the input count data, respectively. The argument ae_type can be chosen from poisson, zipoisson, nb and zinb.
+The input `count` variable is single-cell expression raw count data with N cells and G genes and `K` is the number of archetypes/GEPs. The input `count` can be a pandas dataframe, a numpy array, or an AnnData object. Note that `recon`, `usage` and `spectra` are reconstructed expression count data (N by G), the usage matrix (N by K) and the archetype matrix (K by G) of the input count data, respectively. The argument ae_type can be chosen from poisson, zipoisson, nb and zinb.
 
 More details about how to use scAAnet can be found in this tutorial on simulated data based on Splatter’s [2] framework.
 

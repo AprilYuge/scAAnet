@@ -36,7 +36,7 @@ def programDEG(count, usage, test_use = 'nb', offset = True, p_cor = 'bonferroni
     usage: `numpy.ndarray`
         A numpy array saving usage and each column corresponds to a program.
     test.use: `str`, optional. Default: `nb`.
-        This is the type of GLM regression used for DEG, another choice is `poisson`
+        This is the type of GLM regression used for DEG, other choices are `nb_naive` and `poisson`.
     p_cor: `str`, optional. Default: `bonferroni`.
         Method used for p value adjustment. Another choice is `benjamini-hochberg`.
 

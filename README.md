@@ -22,8 +22,7 @@ Then you can use scAAnet after activating the virtual environment. Here is an ex
 
 The input `count` variable is single-cell expression raw count data with N cells and G genes and `K` is the number of archetypes/GEPs. The input `count` can be a pandas dataframe, a numpy array, or an AnnData object. Note that `recon`, `usage` and `spectra` are reconstructed expression count data (N by G), the usage matrix (N by K) and the archetype matrix (K by G) of the input count data, respectively. The argument ae_type can be chosen from poisson, zipoisson, nb and zinb.
 
-More details about how to use scAAnet can be found in this [tutorial](https://github.com/AprilYuge/scAAnet_latest/blob/main/tutorials/Tutorial%20of%20scAAnet%20on%20simulated%20data.ipynb) on simulated data based on Splatter’s [2] framework.
-
+More details about how to use scAAnet can be found in this [tutorial](https://github.com/AprilYuge/scAAnet_latest/blob/main/tutorials/Tutorial%20of%20scAAnet%20on%20simulated%20data.ipynb) on simulated data based on Splatter’s [2] framework. Analysis code for the manuscript and more usage of scAAnet can be found in this [folder](https://github.com/AprilYuge/scAAnet_latest/tree/main/scripts).
 
 ### References ###
 

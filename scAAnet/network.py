@@ -67,6 +67,7 @@ class Autoencoder():
                  output_size=None,
                  hidden_size=(64, 32, 64),
                  dispersion = 'gene',
+                 lat_coef=1.,
                  l2_coef=0.,
                  l1_coef=0.,
                  l2_enc_coef=0.,
@@ -84,6 +85,7 @@ class Autoencoder():
         self.output_size = output_size
         self.hidden_size = hidden_size
         self.dispersion = dispersion
+        self.lat_coef = lat_coef
         self.l2_coef = l2_coef
         self.l1_coef = l1_coef
         self.l2_enc_coef = l2_enc_coef
@@ -208,7 +210,7 @@ class Autoencoder():
         self.extra_models['mean_norm'] = Model(inputs=self.input_layer, outputs=mean)
         self.model = Model(inputs=[self.input_layer, self.sf_layer], outputs=mean)  # yuge
         self.arch_loss = tf.math.reduce_mean(tf.math.square(self.model.get_layer('z_fixed').get_weights()[0] - self.z_predicted))
-        self.model.add_loss(self.arch_loss)
+        self.model.add_loss(self.arch_loss*self.lat_coef)
 
         self.encoder = self.get_encoder()
         
@@ -281,7 +283,7 @@ class PoissonAutoencoder(Autoencoder):
         self.extra_models['mean_norm'] = Model(inputs=self.input_layer, outputs=mean)
         self.model = Model(inputs=[self.input_layer, self.sf_layer], outputs=output)
         self.arch_loss = tf.math.reduce_mean(tf.math.square(self.model.get_layer('z_fixed').get_weights()[0] - self.z_predicted))
-        self.model.add_loss(self.arch_loss)
+        self.model.add_loss(self.arch_loss*self.lat_coef)
 
         self.encoder = self.get_encoder()
         
@@ -338,7 +340,7 @@ class ZIPoissonAutoencoder(Autoencoder):
         self.model = Model(inputs=[self.input_layer, self.sf_layer], 
                            outputs=[output, pi])
         self.arch_loss = tf.math.reduce_mean(tf.math.square(self.model.get_layer('z_fixed').get_weights()[0] - self.z_predicted))
-        self.model.add_loss(self.arch_loss)
+        self.model.add_loss(self.arch_loss*self.lat_coef)
 
         self.encoder = self.get_encoder()
 
@@ -410,7 +412,7 @@ class NBAutoencoder(Autoencoder):
         self.model = Model(inputs=[self.input_layer, self.sf_layer], 
                            outputs=[output, disp])
         self.arch_loss = tf.math.reduce_mean(tf.math.square(self.model.get_layer('z_fixed').get_weights()[0] - self.z_predicted))
-        self.model.add_loss(self.arch_loss)
+        self.model.add_loss(self.arch_loss*self.lat_coef)
 
         self.encoder = self.get_encoder()
 
@@ -487,7 +489,7 @@ class ZINBAutoencoder(Autoencoder):
         self.model = Model(inputs=[self.input_layer, self.sf_layer], 
                            outputs=[output, disp, pi])
         self.arch_loss = tf.math.reduce_mean(tf.math.square(self.model.get_layer('z_fixed').get_weights()[0] - self.z_predicted))
-        self.model.add_loss(self.arch_loss)
+        self.model.add_loss(self.arch_loss*self.lat_coef)
 
         self.encoder = self.get_encoder()
 

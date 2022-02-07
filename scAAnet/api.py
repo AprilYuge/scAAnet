@@ -22,6 +22,7 @@ def scAAnet(count,
         batchnorm=True,
         activation='relu',
         init='glorot_normal',
+        lat_coef=1.,
         network_kwds={},
         epochs=300,               # training args
         reduce_lr=10,
@@ -67,9 +68,9 @@ def scAAnet(count,
     epochs : `int`, optional. Default: 300.
         Number of total epochs in training.
     reduce_lr : `int`, optional. Default: 10.
-        Reduces learning rate if validation loss does not improve in given number of epochs.
+        Reduces learning rate if loss does not improve in given number of epochs.
     early_stop : `int`, optional. Default: 15.
-        Stops training if validation loss does not improve in given number of epochs.
+        Stops training if loss does not improve in given number of epochs.
     batch_size : `int`, optional. Default: 32.
         Number of samples in the batch used for SGD.
     optimizer : `str`, optional. Default: "rmsprop".
@@ -124,6 +125,7 @@ def scAAnet(count,
         'dispersion': dispersion,
         'batchnorm': batchnorm,
         'activation': activation,
+        'lat_coef': lat_coef,
         'init': init
     }
 

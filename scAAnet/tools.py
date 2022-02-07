@@ -15,7 +15,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.gridspec as gridspec
 
+import scipy
+from scipy.cluster.hierarchy import cophenet, leaves_list
+from scipy.spatial.distance import squareform, pdist
 import scipy.stats as stats
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+import fastcluster as fc
+
 
 def save_df_to_npz(obj, filename):
     np.savez_compressed(filename, data=obj.values, index=obj.index.values, columns=obj.columns.values)
@@ -193,3 +200,176 @@ def geneScore(spectra, scale=True):
         gene_score = gene_score.sub(gene_score.min(axis=0), axis='columns').div(gene_score.max(axis=0)-gene_score.min(axis=0), 
                                                                                 axis='columns')
     return gene_score
+
+# Assess the stability of inferred archetypes through differnt Ks
+def StabilityArchetype(k_min, k_max, step, n_rep, dists, filepath, savepath=None, l2 = False):
+    
+    '''
+    Borrowed from Alexandrov et al. 2013: Deciphering signatures of mutational processes 
+    operative in human cancer and Kotliar et al. 2019: Identifying gene expression programs
+    of cell-type identify and cellular activity with single-cell RNA-seq
+    '''
+    
+    K = np.arange(k_min, k_max+1, step)
+    results = []
+    
+    for k in K:
+        for dist in dists:
+            # Read all spectra results
+            arch = load_df_from_npz(filepath%(dist, 1, k))
+            arch = arch.transpose()
+            for rs in np.arange(2, n_rep+1):
+                arch_new = load_df_from_npz(filepath%(dist, rs, k))
+                arch = pd.concat([arch, arch_new.transpose()])
+    
+            if l2:
+                arch = (arch.T/np.sqrt((arch**2).sum(axis=1))).T
+                
+            if savepath:
+                save_df_to_npz(arch, savepath%(dist, k))
+        
+            # K-means clustering on all spectra
+            kmeans_model = KMeans(n_clusters=k, n_init=10, random_state=1)
+            kmeans_model.fit(arch)
+            kmeans_cluster_labels = pd.Series(kmeans_model.labels_+1, index=arch.index)
+
+            # Compute the silhouette score
+            stability = silhouette_score(arch.values, kmeans_cluster_labels, metric='euclidean')
+            results.append([k, dist, stability])
+    
+    results = pd.DataFrame(results, columns=["K", "Method", "Stability"])
+    
+    return results
+
+# Assess the stability of inferred archetypes through differnt Ks
+def StabilityUsage(k_min, k_max, step, n_rep, dists, n_cells, filepath_usage, filepath_consensus=None, 
+                   n_cells_max=20000, cluster=True):
+    
+    '''
+    Borrowed from Brunet et al. 2004: Metagenes and molecular pattern discovery using
+    matrix factorization
+    '''
+    np.random.seed(520)
+    
+    K = np.arange(k_min, k_max+1, step)
+    results = []
+    
+    if n_cells > n_cells_max:
+        cells_choice = np.random.choice(n_cells, n_cells_max, replace=False)
+        n_cells = n_cells_max
+    else:
+        cells_choice = np.arange(n_cells)
+    
+    for k in K:
+        for dist in dists:
+            d = np.zeros(int(scipy.special.comb(n_cells, 2)))
+            # Read all cell usage results
+            for rs in np.arange(1, n_rep+1):
+                usage = load_df_from_npz(filepath_usage%(dist, rs, k))
+                usage = usage.to_numpy()
+                usage = usage[cells_choice,]               
+                if cluster:
+                    assign = usage.argmax(1)
+                    usage = np.zeros_like(usage)
+                    usage[np.arange(len(usage)), assign] = 1
+                    d += scipy.spatial.distance.pdist(usage, 'braycurtis')
+                else:
+                    d += scipy.spatial.distance.pdist(usage)
+            
+            d = d/n_rep
+            
+            if filepath_consensus:
+                if cluster:
+                    # Save consensus clustering matrix
+                    np.save(filepath_consensus%(dist, k), 1-d)
+                else:
+                    # Save distance matrix
+                    np.save(filepath_consensus%(dist, k), d)
+            
+            # Hierarchical clustering using distance d
+            HC = fc.linkage(d, method='average')
+            cophen_d = cophenet(HC)
+            
+            # Compute Cophenetic correlation coefficient
+            cophen_corr = np.corrcoef(d, cophen_d)[0,1]
+            results.append([k, dist, cophen_corr])
+    
+    results = pd.DataFrame(results, columns=["K", "Method", "Stability"])
+    
+    return results
+
+# Plot consensus clustering matrix of inferred usage
+def PlotConsensusMat(filepath, savepath=None, colormap='rocket', n_cells_max=6000, dpi=600):
+    np.random.seed(520)
+    cvec = np.load(filepath)    
+    cmat = squareform(cvec)
+    if len(cmat) > n_cells_max:
+        cells_choice = np.random.choice(len(cmat), n_cells_max, replace=False)
+        cmat = cmat[cells_choice,][:, cells_choice]
+        cvec = scipy.spatial.distance.squareform(cmat)
+    HC = fc.linkage(1-cvec, method='average')
+    cg = sns.clustermap(cmat, row_linkage=HC, col_linkage=HC, cbar_pos=(1, .2, .03, .4), 
+                        yticklabels=False, xticklabels=False, cmap=colormap)
+    cg.ax_row_dendrogram.set_visible(False)
+    cg.ax_col_dendrogram.set_visible(False)
+    if savepath:
+        plt.savefig(savepath, dpi=dpi)
+        plt.close()
+
+# Plot distance clustering matrix of inferred GEPs
+def PlotArchDistMat(filepath, savepath=None, colormap='rocket', dpi=600):
+    arch = load_df_from_npz(filepath)
+    
+    # K-means clustering on all spectra
+    kmeans_model = KMeans(n_clusters=k, n_init=10, random_state=1)
+    kmeans_model.fit(arch)
+    kmeans_cluster_labels = pd.Series(kmeans_model.labels_+1, index=arch.index)
+    
+    topics_dist = squareform(pdist(arch.values))
+    
+    spectra_order = []
+    for cl in sorted(set(kmeans_cluster_labels)):
+        cl_filter = kmeans_cluster_labels==cl
+
+        if cl_filter.sum() > 1:
+            cl_dist = squareform(topics_dist[cl_filter, :][:, cl_filter])
+            cl_dist[cl_dist < 0] = 0 #Rarely get floating point arithmetic issues
+            cl_link = fc.linkage(cl_dist, 'average')
+            cl_leaves_order = leaves_list(cl_link)
+
+            spectra_order += list(np.where(cl_filter)[0][cl_leaves_order])
+        else:
+            ## Corner case where a component only has one element
+            spectra_order += list(np.where(cl_filter)[0])
+            
+    width_ratios = [0.5, 9, 0.5, 0.5]
+    height_ratios = [0.5, 9]
+    fig = plt.figure(figsize=(sum(width_ratios), sum(height_ratios)))
+    gs = gridspec.GridSpec(len(height_ratios), len(width_ratios), fig,
+                            0.01, 0.01, 0.98, 0.98,
+                            height_ratios=height_ratios,
+                            width_ratios=width_ratios,
+                            wspace=0, hspace=0)
+
+    dist_ax = fig.add_subplot(gs[1,1], xticks=[], yticks=[], frameon=False)
+
+    D = topics_dist[spectra_order, :][:, spectra_order]
+    dist_im = dist_ax.imshow(D, interpolation='none', cmap=colormap, aspect='auto', rasterized=True)
+
+    left_ax = fig.add_subplot(gs[1,0], xticks=[], yticks=[], frameon=False)
+    left_ax.imshow(kmeans_cluster_labels.values[spectra_order].reshape(-1, 1),
+                    interpolation='none', cmap='Spectral', aspect='auto', rasterized=True)
+
+    top_ax = fig.add_subplot(gs[0,1], xticks=[], yticks=[], frameon=False)
+    top_ax.imshow(kmeans_cluster_labels.values[spectra_order].reshape(1, -1),
+                  interpolation='none', cmap='Spectral', aspect='auto', rasterized=True)
+
+    cbar_gs = gridspec.GridSpecFromSubplotSpec(3, 1, subplot_spec=gs[1, 3],
+                                               height_ratios=[0.5,1,0.5], wspace=0, hspace=0)
+    cbar_ax = fig.add_subplot(cbar_gs[1,0], frameon=False, title='')
+    fig.colorbar(dist_im, cax=cbar_ax, ticks=np.linspace(D.min(), D.max(), 6).round(2), 
+                 orientation='vertical').outline.set_visible(False)
+    
+    if savepath:
+        plt.savefig(savepath, dpi=dpi, bbox_inches = 'tight')
+        plt.close()

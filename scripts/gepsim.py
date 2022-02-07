@@ -5,6 +5,8 @@ Created on Tue Mar 31 22:42:47 2020
 @author: wangy
 """
 
+# This file includes a function used for simulating data. This was based on Splatter (Zappia, Phipson, and Oshlack, 2017) and adapated from code on https://github.com/dylkot/scsim.
+
 import pandas as pd
 import numpy as np
 
@@ -17,7 +19,7 @@ class gepsim:
                 diffexpprob=.1, diffexpdownprob=.5,
                 diffexploc=.1, diffexpscale=.4, bcv_dispersion=.1,
                 bcv_dof=60, ndoublets=0, boundprob=.5, 
-                zeroinflate = False, zidecay = 0.3, de_overlap = True):
+                zeroinflate = False, zidecay = 0.3, de_overlap = True, cluster = False):
         
         self.ngenes = ngenes
         self.ncells = ncells
@@ -42,6 +44,7 @@ class gepsim:
         self.zidecay = zidecay
         self.zeroinflate = zeroinflate
         self.de_overlap = de_overlap
+        self.cluster = cluster
 
     def simulate(self):
         np.random.seed(self.seed)
@@ -202,11 +205,16 @@ class gepsim:
         libsize = np.random.lognormal(mean=self.libloc, sigma=self.libscale,
                                       size=self.init_ncells)
         self.cellnames = ['Cell%d' % i for i in range(1, self.init_ncells+1)]
-        
-        '''Sample group usage for each cell'''
-        nbound = int(self.ncells*self.boundprob)
-        usage = np.concatenate([self.sample_at_uniform(self.ngroups, self.ncells-nbound), 
-                                self.sample_boundary_uniform(nbound)], axis=0)
+        if self.cluster:
+            '''Sample cluster label for each cell'''
+            usage = np.zeros((self.ncells, self.ngroups))
+            col = np.random.randint(0, self.ngroups, self.ncells)
+            usage[np.arange(self.ncells), col] = 1
+        else:
+            '''Sample group usage for each cell'''
+            nbound = int(self.ncells*self.boundprob)
+            usage = np.concatenate([self.sample_at_uniform(self.ngroups, self.ncells-nbound), 
+                                    self.sample_boundary_uniform(nbound)], axis=0)
         cellparams = pd.DataFrame(usage, index=self.cellnames, 
                                   columns=['group%d_usage' % i for i in range(1, self.ngroups+1)])
         cellparams['libsize'] = libsize

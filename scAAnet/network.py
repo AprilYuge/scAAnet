@@ -1,3 +1,5 @@
+# The framework was adapted from https://github.com/theislab/dca/blob/master/dca/network.py
+
 import numpy as np
 import os
 import pickle
@@ -29,6 +31,7 @@ class ZFixedLayer(tf.keras.layers.Layer):
     def call(self, inputs):
         return tf.matmul(inputs, self.w)
 
+# We borrowed the following function from https://github.com/bmda-unibas/DeepArchetypeAnalysis/blob/master/AT_lib/lib_at.py
 def create_z_fixed(dim_latent_space):
     """
     Creates Coordinates of the Simplex spanned by the Archetypes.
@@ -75,7 +78,6 @@ class Autoencoder():
                  ridge=0.,
                  hidden_dropout=0.,
                  input_dropout=0.,
-                 batchnorm=True,
                  activation='relu',
                  init='glorot_normal',
                  file_path=None,
@@ -93,7 +95,6 @@ class Autoencoder():
         self.ridge = ridge
         self.hidden_dropout = hidden_dropout
         self.input_dropout = input_dropout
-        self.batchnorm = batchnorm
         self.activation = activation
         self.init = init
         self.loss = None

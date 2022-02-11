@@ -1,3 +1,5 @@
+# This script was adapted from https://github.com/theislab/dca/blob/master/dca/loss.py
+
 import numpy as np
 import tensorflow as tf
 

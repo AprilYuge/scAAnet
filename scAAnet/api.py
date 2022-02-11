@@ -1,8 +1,9 @@
+# The framework was adapted from https://github.com/theislab/dca/blob/master/dca/api.py
+
 import os, random
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
-calhost:8875
 import anndata
 
 try:
@@ -19,7 +20,6 @@ def scAAnet(count,
         hidden_size=(128, 10, 128), # network args
         hidden_dropout=0.,
         dispersion='gene-cell',
-        batchnorm=True,
         activation='relu',
         init='glorot_normal',
         lat_coef=1.,
@@ -44,11 +44,11 @@ def scAAnet(count,
     ----------
     count : `anndata.AnnData`, `pandas.core.frame.DataFrame` or `numpy.ndarray`
         A dataframe saving raw counts.
-    ae_type : `str`, optional. `zipoisson`(default), `zinb`, `nb` or `poisson`.
-        Type of the autoencoder. Return values and the architecture is
-        determined by the type e.g. `nb` does not provide dropout
-        probabilities.
-    hidden_size : `tuple` or `list`, optional. Default: (64, 32, 64).
+    ae_type : `str`, optional. `zipoisson`(default), `zinb`, `nb`, `poisson`, or 'normal'.
+        Type of the autoencoder and 'normal' represents an AE with MSE as reconstruction loss.
+        Return values and the architecture is determined by the type (e.g. `nb` does not 
+        provide dropout probabilities).
+    hidden_size : `tuple` or `list`, optional. Default: (128, 10, 128).
         Width of hidden layers.
     hidden_dropout : `float`, `tuple` or `list`, optional. Default: 0.0.
         Probability of weight dropout in the autoencoder (per layer if list
@@ -57,12 +57,12 @@ def scAAnet(count,
         If you want the dispersion parameter per gene to be the same across cells,
         leave it as default; otherwise, choosing `gene-cell` will make it differ
         across cells.
-    batchnorm : `bool`, optional. Default: `True`.
-        If true, batch normalization is performed.
     activation : `str`, optional. Default: `relu`.
         Activation function of hidden layers.
     init : `str`, optional. Default: `glorot_uniform`.
         Initialization method used to initialize weights.
+    lat_coef : `floar`, optional. Default: 1.0.
+        Relative weight of the archetypal loss to the reconstruction loss.
     network_kwds : `dict`, optional.
         Additional keyword arguments for the autoencoder.
     epochs : `int`, optional. Default: 300.
@@ -71,7 +71,7 @@ def scAAnet(count,
         Reduces learning rate if loss does not improve in given number of epochs.
     early_stop : `int`, optional. Default: 15.
         Stops training if loss does not improve in given number of epochs.
-    batch_size : `int`, optional. Default: 32.
+    batch_size : `int`, optional. Default: 64.
         Number of samples in the batch used for SGD.
     optimizer : `str`, optional. Default: "rmsprop".
         Type of optimization method used for training.
@@ -91,7 +91,7 @@ def scAAnet(count,
         If true, all additional parameters of scAAnet are returned such as dropout
         probabilities and estimated dispersion values, in case that autoencoder 
         is of type zinb or zinb-conddisp.
-    warm_up : `int`. Default: 5.
+    warm_up : `int`. Default: 20.
         Number of epochs for warm-up. During warm-ups, the weights of Z_fixed layer
         is not trained.
 
@@ -123,7 +123,6 @@ def scAAnet(count,
         'hidden_size': hidden_size,
         'hidden_dropout': hidden_dropout,
         'dispersion': dispersion,
-        'batchnorm': batchnorm,
         'activation': activation,
         'lat_coef': lat_coef,
         'init': init

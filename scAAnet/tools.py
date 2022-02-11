@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Feb 24 10:06:57 2021
-
-@author: wangy
-"""
-
 import numpy as np
 import pandas as pd
 from statsmodels.stats.multitest import multipletests
@@ -22,7 +15,8 @@ import scipy.stats as stats
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import fastcluster as fc
-
+import scipy.sparse as sp
+import anndata
 
 def save_df_to_npz(obj, filename):
     np.savez_compressed(filename, data=obj.values, index=obj.index.values, columns=obj.columns.values)
@@ -38,10 +32,11 @@ def programDEG(count, usage, test_use = 'nb', offset = True, p_cor = 'bonferroni
 
     Parameters
     ----------
-    count : `pandas.core.frame.DataFrame`
+    count : `pandas.core.frame.DataFrame` or `anndata.AnnData`
         A dataframe saving raw counts with rows being cells and columns being genes.
-    usage: `numpy.ndarray`
-        A numpy array saving usage and each column corresponds to a program.
+        Or an anndata object with raw count data in .X
+    usage: `numpy.ndarray` or `pd.core.frame.DataFrame`
+        A numpy array or a pandas dataframe saving usage and each column corresponds to a program.
     test.use: `str`, optional. Default: `nb`.
         This is the type of GLM regression used for DEG, other choices are `nb_naive` and `poisson`.
     p_cor: `str`, optional. Default: `bonferroni`.
@@ -57,6 +52,20 @@ def programDEG(count, usage, test_use = 'nb', offset = True, p_cor = 'bonferroni
     
     if lib_size is None:
         lib_size = count.sum(1)
+        
+    if isinstance(count, anndata.AnnData):
+        cells = count.obs.index
+        genes = count.var.index
+        if sp.issparse(count.X):   
+            count = count.X.todense()
+        else:
+            count = count.X
+        count = pd.DataFrame(count)
+        count.index = cells
+        count.columns = genes
+    
+    if isinstance(usage, pd.core.frame.DataFrame):
+        usage = usage.values
     
     # Filter out cells with too small library size
     if min_counts_per_cell is None:

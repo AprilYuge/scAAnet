@@ -5,7 +5,9 @@ Created on Tue Mar 31 22:42:47 2020
 @author: wangy
 """
 
-# This file includes a function used for simulating data. This was based on Splatter (Zappia, Phipson, and Oshlack, 2017) and adapated from code on https://github.com/dylkot/scsim.
+# This file includes a function used for simulating data. 
+# This was based on Splatter (Zappia, Phipson, and Oshlack, 2017) 
+# and adapated from code on https://github.com/dylkot/scsim.
 
 import pandas as pd
 import numpy as np
@@ -40,11 +42,11 @@ class gepsim:
         self.bcv_dof = bcv_dof
         self.ndoublets = ndoublets
         self.init_ncells = ncells+ndoublets
-        self.boundprob = boundprob
-        self.zidecay = zidecay
+        self.boundprob = boundprob # probability that cells are located on boundary of the simplex
+        self.zidecay = zidecay # control the degree of zero-inflation and smaller value results in larger zero-proportion
         self.zeroinflate = zeroinflate
-        self.de_overlap = de_overlap
-        self.cluster = cluster
+        self.de_overlap = de_overlap # whether overlapped DEGs among GEPs is allowed
+        self.cluster = cluster # whether simulate data under extreme case where no GEPs are shared (e.g. cluster-based)
 
     def simulate(self):
         np.random.seed(self.seed)
